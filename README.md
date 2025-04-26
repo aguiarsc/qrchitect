@@ -7,18 +7,18 @@ Minimalist QR code generator web application that allows users to create beautif
 ## ✨ Features
 
 - **Multiple Content Types**:
-  - URLs with automatic protocol prefixing
-  - Email addresses with mailto: formatting
-  - Phone numbers with tel: formatting
+  - URLs with automatic protocol
+  - Email addresses with mailto
+  - Phone numbers with tel
   - Plain text content with multiline support
 
 - **Advanced Customization**:
   - Precise color selection for foreground and background
-  - Multiple dot style options (square, dots, rounded)
-  - Eye frame customization (square, circle, rounded)
-  - Eye ball customization (square, circle, diamond)
+  - Multiple dot style options
+  - Eye frame customization
+  - Eye ball customization
 
-- **Premium Experience**:
+- **Neat Experience**:
   - Logo upload to embed in your QR code
   - Live preview of changes
   - Export in PNG or SVG format
