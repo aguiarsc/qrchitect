@@ -53,13 +53,3 @@ npm install
 # Start the development server
 npm run dev
 ```
-
-### Building for Production
-
-```bash
-# Build the app
-npm run build
-
-# Preview the production build
-npm run preview
-```
