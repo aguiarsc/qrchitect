@@ -2,6 +2,8 @@
 
 Minimalist QR code generator web application that allows users to create beautifully styled QR codes with a nice design aesthetic.
 
+![Image](https://github.com/user-attachments/assets/7f937c9b-4f1e-4e42-bee6-80e6f502bf18)
+
 ## ✨ Features
 
 - **Multiple Content Types**:
@@ -30,12 +32,6 @@ Minimalist QR code generator web application that allows users to create beautif
 - **UI Components**: Shadcn UI for clean, customizable components
 - **Form Management**: React Hook Form with Zod validation
 - **QR Code Generation**: qr-code-styling library for flexible QR styling
-
-## 🖥️ Screenshots
-
-<div align="center">
-  <i>Light and dark mode versions of QRCHITECT</i>
-</div>
 
 ## 🛠️ Development
 
