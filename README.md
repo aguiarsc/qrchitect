@@ -67,12 +67,3 @@ npm run build
 # Preview the production build
 npm run preview
 ```
-
-## 🎨 Design Philosophy
-
-QRCHITECT follows a luxury, minimalist design approach with these principles:
-
-- **Simplicity**: Clean, uncluttered interfaces with generous whitespace
-- **Premium Feel**: Subtle animations, soft shadows, and elegant typography
-- **Performance**: Lightweight, fast loading, minimal dependencies
-- **Accessibility**: Support for keyboard navigation, proper contrast, and semantic HTML
