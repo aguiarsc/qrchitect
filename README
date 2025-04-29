@@ -14,6 +14,7 @@ Minimalist QR code generator web application that allows users to create beautif
 
 - **Advanced Customization**:
   - Precise color selection for foreground and background
+  - Color gradient picker
   - Multiple dot style options
   - Eye frame customization
   - Eye ball customization
