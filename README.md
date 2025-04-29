@@ -2,7 +2,7 @@
 
 Minimalist QR code generator web application that allows users to create beautifully styled QR codes with a nice design aesthetic.
 
-![Image](https://github.com/user-attachments/assets/edd0f55c-0dd3-4d57-92d7-4631cf992608)
+![QRchitect Preview](https://github.com/user-attachments/assets/edd0f55c-0dd3-4d57-92d7-4631cf992608)
 
 ## ✨ Features
 
