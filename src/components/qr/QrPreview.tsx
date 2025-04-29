@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
 import { Button } from '@/components/ui/button';
 import type { QrFormValues, ContentType } from './QrForm';
@@ -41,6 +41,19 @@ const formatContent = (contentType: ContentType, content: string): string => {
   }
 };
 
+// Function to create a linear gradient for the QR code
+const createQrGradient = (startColor: string, endColor: string, angle: number) => {
+  // Return gradient configuration compatible with qr-code-styling
+  return {
+    type: 'linear',
+    colorStops: [
+      { offset: 0, color: startColor },
+      { offset: 1, color: endColor }
+    ],
+    rotation: angle
+  };
+};
+
 interface QrPreviewProps {
   options: QrFormValues;
 }
@@ -48,9 +61,27 @@ interface QrPreviewProps {
 export const QrPreview: React.FC<QrPreviewProps> = ({ options }) => {
   const qrRef = useRef<HTMLDivElement>(null);
   const qrCodeRef = useRef<QRCodeStyling | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const formattedContent = formatContent(options.contentType, options.content);
+
+    // Define base options and conditional color/gradient logic
+    const baseDotsOptions = { type: mapDotType(options.dotStyle) };
+    const baseCornersSquareOptions = { type: mapCornerSquareType(options.eyeStyle) };
+    const baseCornersDotOptions = { type: mapCornerDotType(options.eyeballStyle) };
+
+    const dotsOptions = options.useGradient
+      ? { ...baseDotsOptions, gradient: createQrGradient(options.gradientStartColor, options.gradientEndColor, options.gradientAngle), color: undefined }
+      : { ...baseDotsOptions, color: options.foregroundColor, gradient: undefined };
+
+    const cornersSquareOptions = options.useGradient
+      ? { ...baseCornersSquareOptions, gradient: createQrGradient(options.gradientStartColor, options.gradientEndColor, options.gradientAngle), color: undefined }
+      : { ...baseCornersSquareOptions, color: options.foregroundColor, gradient: undefined };
+        
+    const cornersDotOptions = options.useGradient
+      ? { ...baseCornersDotOptions, gradient: createQrGradient(options.gradientStartColor, options.gradientEndColor, options.gradientAngle), color: undefined }
+      : { ...baseCornersDotOptions, color: options.foregroundColor, gradient: undefined };
 
     if (!qrCodeRef.current) {
       qrCodeRef.current = new QRCodeStyling({
@@ -60,19 +91,10 @@ export const QrPreview: React.FC<QrPreviewProps> = ({ options }) => {
         margin: 10,
         qrOptions: { typeNumber: 0, mode: 'Byte', errorCorrectionLevel: 'Q' },
         imageOptions: { hideBackgroundDots: true, imageSize: 0.3, margin: 0 },
-        dotsOptions: {
-          type: mapDotType(options.dotStyle),
-          color: options.foregroundColor
-        },
+        dotsOptions: dotsOptions, // Apply conditional options
         backgroundOptions: { color: options.backgroundColor },
-        cornersSquareOptions: {
-          type: mapCornerSquareType(options.eyeStyle),
-          color: options.foregroundColor
-        },
-        cornersDotOptions: {
-          type: mapCornerDotType(options.eyeballStyle),
-          color: options.foregroundColor
-        }
+        cornersSquareOptions: cornersSquareOptions, // Apply conditional options
+        cornersDotOptions: cornersDotOptions // Apply conditional options
       });
 
       if (qrRef.current) {
@@ -81,41 +103,31 @@ export const QrPreview: React.FC<QrPreviewProps> = ({ options }) => {
     } else {
       qrCodeRef.current.update({
         data: formattedContent,
-        dotsOptions: {
-          type: mapDotType(options.dotStyle),
-          color: options.foregroundColor
-        },
+        dotsOptions: dotsOptions, // Apply conditional options
         backgroundOptions: { color: options.backgroundColor },
-        cornersSquareOptions: {
-          type: mapCornerSquareType(options.eyeStyle),
-          color: options.foregroundColor
-        },
-        cornersDotOptions: {
-          type: mapCornerDotType(options.eyeballStyle),
-          color: options.foregroundColor
-        }
+        cornersSquareOptions: cornersSquareOptions, // Apply conditional options
+        cornersDotOptions: cornersDotOptions // Apply conditional options
       });
     }
-
-    // Handle logo if present
-    if (options.logo && qrCodeRef.current) {
+    
+    // Handle logo update separately
+    if (options.logo instanceof File) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        if (e.target?.result && qrCodeRef.current) {
-          qrCodeRef.current.update({
-            image: e.target.result.toString()
-          });
+        if (e.target && typeof e.target.result === 'string') {
+          qrCodeRef.current?.update({ image: e.target.result });
         }
       };
       reader.readAsDataURL(options.logo);
-    } else if (qrCodeRef.current) {
-      qrCodeRef.current.update({
-        image: undefined
-      });
+    } else if (options.logo === null) {
+      // Explicitly remove logo if cleared
+      qrCodeRef.current?.update({ image: undefined });
     }
+
+  // Include all dependencies from options that affect the QR code appearance
   }, [options]);
 
-  const handleDownload = (fileType: 'png' | 'svg') => {
+  const handleDownload = (extension: 'png' | 'svg') => {
     if (!qrCodeRef.current) return;
     
     // Use content type as a prefix for better filename organization
@@ -123,14 +135,23 @@ export const QrPreview: React.FC<QrPreviewProps> = ({ options }) => {
     const fileName = `qrchitect-${contentTypePrefix}-${new Date().getTime()}`;
     
     qrCodeRef.current.download({
-      extension: fileType,
+      extension: extension,
       name: fileName
     });
   };
 
+  // Animation classes for hover effect
+  const animationClasses = isHovered 
+    ? 'transform scale-110 shadow-xl' 
+    : 'transform scale-100 shadow-lg';
+
   return (
     <div className="flex flex-col items-center space-y-6">
-      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+      <div 
+        className={`p-6 bg-white dark:bg-gray-800 rounded-lg transition-all duration-500 ease-in-out ${animationClasses}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         <div ref={qrRef} className="w-[300px] h-[300px]"></div>
       </div>
       

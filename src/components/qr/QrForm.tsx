@@ -12,6 +12,7 @@ import {
   SelectGroup
 } from '@/components/ui/select';
 import { ColorPicker } from '@/components/ui/color-picker';
+import { GradientPicker } from '@/components/ui/gradient-picker';
 import { Textarea } from '@/components/ui/textarea';
 
 // Define the content type options
@@ -21,8 +22,12 @@ export type ContentType = 'url' | 'email' | 'phone' | 'text';
 const formSchema = z.object({
   contentType: z.enum(['url', 'email', 'phone', 'text']),
   content: z.string().min(1, { message: 'Content is required' }),
+  useGradient: z.boolean().default(false),
   foregroundColor: z.string().min(4),
   backgroundColor: z.string().min(4),
+  gradientStartColor: z.string().min(4),
+  gradientEndColor: z.string().min(4),
+  gradientAngle: z.number().min(0).max(360),
   dotStyle: z.enum(['square', 'dots', 'rounded']),
   eyeStyle: z.enum(['square', 'circle', 'rounded']),
   eyeballStyle: z.enum(['square', 'circle', 'diamond']),
@@ -41,8 +46,12 @@ export const QrForm: React.FC<QrFormProps> = ({ onFormChange }) => {
     defaultValues: {
       contentType: 'url',
       content: 'https://example.com',
+      useGradient: false,
       foregroundColor: '#000000',
       backgroundColor: '#FFFFFF',
+      gradientStartColor: '#000000',
+      gradientEndColor: '#666666',
+      gradientAngle: 45,
       dotStyle: 'square',
       eyeStyle: 'square',
       eyeballStyle: 'square',
@@ -50,18 +59,18 @@ export const QrForm: React.FC<QrFormProps> = ({ onFormChange }) => {
   });
 
   const contentType = watch('contentType');
+  const useGradient = watch('useGradient');
 
   // Set placeholder and validation based on content type
   React.useEffect(() => {
     const currentContent = watch('content');
-    // Set default value based on content type when it changes
-    if (contentType === 'url' && !currentContent.includes('://')) {
+    if (contentType === 'url' && (!currentContent || !currentContent.includes('://'))) {
       setValue('content', 'https://example.com');
-    } else if (contentType === 'email' && !currentContent.includes('@')) {
+    } else if (contentType === 'email' && (!currentContent || !currentContent.includes('@'))) {
       setValue('content', 'example@email.com');
-    } else if (contentType === 'phone' && !currentContent.includes('+')) {
+    } else if (contentType === 'phone' && (!currentContent || !currentContent.includes('+'))) {
       setValue('content', '+1234567890');
-    } else if (contentType === 'text' && (currentContent.includes('://') || currentContent.includes('@') || currentContent.includes('+'))) {
+    } else if (contentType === 'text' && (!currentContent || currentContent.includes('://') || currentContent.includes('@') || currentContent.includes('+'))) {
       setValue('content', 'Hello World!');
     }
   }, [contentType, setValue, watch]);
@@ -69,7 +78,6 @@ export const QrForm: React.FC<QrFormProps> = ({ onFormChange }) => {
   // Watch for changes in form values
   React.useEffect(() => {
     const subscription = watch((value) => {
-      // Only call onFormChange if all required fields are present
       if (value.contentType && value.content && value.foregroundColor && value.backgroundColor && 
           value.dotStyle && value.eyeStyle && value.eyeballStyle) {
         onFormChange(value as QrFormValues);
@@ -82,7 +90,6 @@ export const QrForm: React.FC<QrFormProps> = ({ onFormChange }) => {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Trigger form update with the new logo
       onFormChange({
         ...watch(),
         logo: file,
@@ -90,7 +97,6 @@ export const QrForm: React.FC<QrFormProps> = ({ onFormChange }) => {
     }
   };
 
-  // Get appropriate label and placeholder based on content type
   const getContentConfig = () => {
     switch (contentType) {
       case 'url':
@@ -138,12 +144,12 @@ export const QrForm: React.FC<QrFormProps> = ({ onFormChange }) => {
           render={({ field }) => (
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select content type" />
+                <SelectValue placeholder="Select a content type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   <SelectItem value="url">URL</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="email">Email Address</SelectItem>
                   <SelectItem value="phone">Phone Number</SelectItem>
                   <SelectItem value="text">Plain Text</SelectItem>
                 </SelectGroup>
@@ -160,50 +166,117 @@ export const QrForm: React.FC<QrFormProps> = ({ onFormChange }) => {
           control={control}
           render={({ field }) => (
             contentType === 'text' ? (
-              <Textarea
-                {...field}
-                placeholder={contentConfig.placeholder}
-                className="w-full resize-none min-h-24"
-                aria-invalid={errors.content ? 'true' : 'false'}
+              <Textarea 
+                placeholder={contentConfig.placeholder} 
+                className="resize-y min-h-[100px]"
+                {...field} 
               />
             ) : (
-              <Input
-                {...field}
-                placeholder={contentConfig.placeholder}
-                className="w-full"
-                aria-invalid={errors.content ? 'true' : 'false'}
+              <Input 
+                placeholder={contentConfig.placeholder} 
+                {...field} 
               />
             )
           )}
         />
-        <p className="text-xs text-muted-foreground">{contentConfig.description}</p>
-        {errors.content && <p className="text-red-500 text-sm">{errors.content.message}</p>}
+        {errors.content && (
+          <p className="text-xs text-red-500 mt-1">{errors.content.message}</p>
+        )}
+        {contentConfig.description && (
+          <p className="text-xs text-muted-foreground mt-1">{contentConfig.description}</p>
+        )}
       </div>
 
-      <div className="space-y-4">
-        <Controller
-          name="foregroundColor"
-          control={control}
-          render={({ field }) => (
-            <ColorPicker
-              {...field}
-              label="Foreground Color"
-              description="Color of the QR code dots and eyes"
-            />
-          )}
-        />
+      <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <h3 className="text-base font-medium">Style Options</h3>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Background Color</label>
+          <Controller
+            name="backgroundColor"
+            control={control}
+            render={({ field }) => (
+              <ColorPicker
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </div>
 
-        <Controller
-          name="backgroundColor"
-          control={control}
-          render={({ field }) => (
-            <ColorPicker
-              {...field}
-              label="Background Color"
-              description="Color behind the QR code"
+        <div className="space-y-2">
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-medium">Foreground Style</label>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Solid</span>
+              <Controller
+                name="useGradient"
+                control={control}
+                render={({ field }) => (
+                  <div 
+                    className={`w-10 h-5 rounded-full p-1 cursor-pointer transition-colors duration-300 ${field.value ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+                    onClick={() => {
+                      const newUseGradient = !field.value;
+                      field.onChange(newUseGradient);
+                      if (newUseGradient) {
+                        const currentFgColor = watch('foregroundColor');
+                        setValue('gradientStartColor', currentFgColor, { shouldDirty: true });
+                        setValue('gradientEndColor', currentFgColor, { shouldDirty: true });
+                      } else {
+                        setValue('foregroundColor', watch('gradientStartColor'), { shouldDirty: true });
+                      }
+                    }}
+                  >
+                    <div 
+                      className={`w-3 h-3 rounded-full bg-white transform transition-transform duration-300 ${field.value ? 'translate-x-5' : 'translate-x-0'}`} 
+                    />
+                  </div>
+                )}
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400">Gradient</span>
+            </div>
+          </div>
+          
+          {useGradient ? (
+            <Controller
+              name="gradientStartColor"
+              control={control}
+              render={({ field: startField }) => (
+                <Controller
+                  name="gradientEndColor"
+                  control={control}
+                  render={({ field: endField }) => (
+                    <Controller
+                      name="gradientAngle"
+                      control={control}
+                      render={({ field: angleField }) => (
+                        <GradientPicker
+                          startColor={startField.value}
+                          endColor={endField.value}
+                          angle={angleField.value}
+                          onStartColorChange={(color) => startField.onChange(color)}
+                          onEndColorChange={(color) => endField.onChange(color)}
+                          onAngleChange={(angle) => angleField.onChange(angle)}
+                        />
+                      )}
+                    />
+                  )}
+                />
+              )}
+            />
+          ) : (
+            <Controller
+              name="foregroundColor"
+              control={control}
+              render={({ field }) => (
+                <ColorPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
             />
           )}
-        />
+        </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Dot Style</label>
